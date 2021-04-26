@@ -64,7 +64,10 @@ find_library(GLFW_LIBRARY glfw)
 # - hiredis
 find_library(HIREDIS_LIBRARY hiredis)
 
-set(SAI2_COMMON_LIBRARIES ${SAI2-COMMON_LIBRARIES} ${HIREDIS_LIBRARY})
+# - opencv 
+find_package(OpenCV REQUIRED)
+
+set(SAI2_COMMON_LIBRARIES ${SAI2-COMMON_LIBRARIES} ${HIREDIS_LIBRARY} ${OpenCV_LIBS})
 
 if(BUILD_GRAPHICAL_EXAMPLES)
     include(${CMAKE_SOURCE_DIR}/CMake/opengl_config.cmake)

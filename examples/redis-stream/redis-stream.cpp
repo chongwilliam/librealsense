@@ -3,16 +3,19 @@
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include "example.hpp"          // Include short list of convenience functions for rendering
-#include "redis/RedisClient.h"  // Include RedisClient 
+#include <hiredis/hiredis.h>
+#include <opencv2/opencv.hpp>   // Include OpenCV API
 
 // Create redis keys 
-const std::string CAMERA_KEY = "rsd455::camera";
+const std::string RGB_KEY = "rsd455::rgb";
+const std::string DEPTH_KEY = "rsd455::depth";
 
 // Capture Example demonstrates how to
 // capture depth and color video streams and render them to the screen
 int main(int argc, char * argv[]) try
 {
     rs2::log_to_console(RS2_LOG_SEVERITY_ERROR);
+
     // Create a simple OpenGL window for rendering:
     window app(1280, 720, "RealSense Capture Example");
 
@@ -29,17 +32,16 @@ int main(int argc, char * argv[]) try
     rs2::config pipe_config;
 
     // Connect to redis server given by argument IP 
-    auto redis_client = RedisClient();
-
-    redis_client.connect();
-
-    redis_client.set(CAMERA_KEY, "Off"); 
-
-    // // Query option for streaming video
-    // bool show_video = false;
-    // if (argv[1] == 1) {
-    //     show_video = true;
-    // }
+    redisContext *c;
+    redisReply *reply;
+    const char *hostname = "127.0.0.1";
+    int port = 6379;
+    struct timeval timeout = { 2, 0 }; // 2 seconds
+    c = redisConnectWithTimeout(hostname, port, timeout);
+    if (c == NULL || c->err) {
+       std::cerr << "Something bad happened" << std::endl;
+       exit(1);
+    }
 
     // Start streaming with default recommended configuration
     // The default video configuration contains Depth and Color streams
@@ -59,13 +61,23 @@ int main(int argc, char * argv[]) try
         // Each texture is displayed on different viewport according to it's stream unique id
         app.show(data);
 
-        // Convert color data to string (frameset to cv::mat to eigen::mat)
-        data.get_color_frame();
-        data.get_depth_frame();
+        // Get frames
+        rs2::frame rgb = data.get_color_frame();
+        rs2::frame depth = data.get_depth_frame().apply_filter(color_map);
+
+        // Query frame size (width and height)
+        const int w = depth.as<rs2::video_frame>().get_width();
+        const int h = depth.as<rs2::video_frame>().get_height();
+
+        // Create OpenCV matrix of size (w,h) from the colorized depth data
+        cv::Mat rgb_image(cv::Size(w, h), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
+        cv::Mat depth_image(cv::Size(w, h), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
 
         // Stream data to redis server
-        redis_client.set(CAMERA_KEY, "On");
-
+        reply = (redisReply*)redisCommand(c,"SET rsd455::rgb",(char*)rgb_image.data, h*w*3);
+        freeReplyObject(reply);
+        reply = (redisReply*)redisCommand(c,"SET rsd455::depth",(char*)depth_image.data, h*w*3);
+        freeReplyObject(reply);
     }
 
     return EXIT_SUCCESS;
