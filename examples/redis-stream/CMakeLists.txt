@@ -16,14 +16,12 @@ if(BUILD_GRAPHICAL_EXAMPLES)
     install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
     # redis-show
-    add_executable(redis-show redis-show.cpp)
-    set_property(TARGET redis-show PROPERTY CXX_STANDARD 11)
-    target_link_libraries(redis-show ${DEPENDENCIES})
-    target_link_libraries(redis-show ${SAI2_COMMON_LIBRARIES})
-    include_directories(redis-show ../ ../../third-party/tclap/include)
-    set_target_properties (redis-show PROPERTIES FOLDER "Examples")
-	install(TARGETS redis-show RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-    FILE(COPY redis-show.py DESTINATION ${CMAKE_INSTALL_BINDIR})
+ #    add_executable(redis-show redis-show.cpp)
+ #    set_property(TARGET redis-show PROPERTY CXX_STANDARD 11)
+ #    target_link_libraries(redis-show ${DEPENDENCIES})
+ #    target_link_libraries(redis-show ${SAI2_COMMON_LIBRARIES})
+ #    include_directories(redis-show ../ ../../third-party/tclap/include)
+ #    set_target_properties (redis-show PROPERTIES FOLDER "Examples")
+	# install(TARGETS redis-show RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     
 endif()

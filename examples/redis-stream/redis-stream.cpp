@@ -3,7 +3,7 @@
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include "example.hpp"          // Include short list of convenience functions for rendering
-#include <hiredis/hiredis.h>
+#include <hiredis/hiredis.h>    // Include Redis API
 #include <opencv2/opencv.hpp>   // Include OpenCV API
 
 // Create redis keys 
@@ -17,7 +17,7 @@ int main(int argc, char * argv[]) try
     rs2::log_to_console(RS2_LOG_SEVERITY_ERROR);
 
     // Create a simple OpenGL window for rendering:
-    window app(1280, 720, "RealSense Capture Example");
+    // window app(1280, 720, "RealSense Capture Example");
 
     // Declare depth colorizer for pretty visualization of depth data
     rs2::colorizer color_map;
@@ -29,7 +29,11 @@ int main(int argc, char * argv[]) try
     rs2::pipeline pipe;
 
     // Declare pipeline configuration 
-    rs2::config pipe_config;
+    rs2::config cfg;    
+    // cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 60);
+    // cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 60);
+    cfg.enable_stream(RS2_STREAM_COLOR, 1280, 720, RS2_FORMAT_BGR8, 30);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 1280, 720, RS2_FORMAT_Z16, 30);
 
     // Connect to redis server given by argument IP 
     redisContext *c;
@@ -47,22 +51,21 @@ int main(int argc, char * argv[]) try
     // The default video configuration contains Depth and Color streams
     // If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
 
-    pipe.start();
+    pipe.start(cfg);
 
-    while (app) // Application still alive?
+    while (1) // Application still alive?
     {
-        // rs2::frameset data = pipe.wait_for_frames().    // Wait for next set of frames from the camera
-                             // apply_filter(printer).     // Print each enabled stream frame rate
-                             // apply_filter(color_map);   // Find and colorize the depth data
+        rs2::frameset data = pipe.wait_for_frames().    // Wait for next set of frames from the camera
+                             apply_filter(printer);     // Print each enabled stream frame rate
 
-        rs2::frameset data = pipe.wait_for_frames();
+        // rs2::frameset data = pipe.wait_for_frames();
 
         // The show method, when applied on frameset, break it to frames and upload each frame into a gl textures
         // Each texture is displayed on different viewport according to it's stream unique id
-        app.show(data);
+        // app.show(data);
 
         // Get frames
-        rs2::video_frame rgb = data.first(RS2_STREAM_COLOR);
+        rs2::video_frame rgb = data.get_color_frame();
         rs2::frame depth = data.get_depth_frame().apply_filter(color_map);
 
         // Query frame size (width and height)
@@ -70,7 +73,7 @@ int main(int argc, char * argv[]) try
         const int h = depth.as<rs2::video_frame>().get_height();  // 640 x 480 default 
 
         // Create OpenCV matrix of size (w,h) from the colorized depth data
-        cv::Mat rgb_image(cv::Size(w, h), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
+        cv::Mat rgb_image(cv::Size(w, h), CV_8UC3, (void*)rgb.get_data(), cv::Mat::AUTO_STEP);
         cv::Mat depth_image(cv::Size(w, h), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
 
         // Stream data to redis server

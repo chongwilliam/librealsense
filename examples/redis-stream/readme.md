@@ -2,7 +2,7 @@
 
 ## Overview
 
-This sample demonstrates how to configure the camera for streaming frames using the pipeline's callback API.
+This sample demonstrates how to configure the camera for streaming frames using the pipeline's callback API. The example has been edited to stream to a redis server.
 This API is recommended when streaming high frequency data such as IMU ([Inertial measurement unit](https://en.wikipedia.org/wiki/Inertial_measurement_unit)) since the callback is invoked immediately once the a frame is ready.
 This sample prints a frame counter for each stream, the code demonstrates how it can be done correctly by synchronizing the callbacks.
 

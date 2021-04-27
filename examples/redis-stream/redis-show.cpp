@@ -3,6 +3,7 @@
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include "example.hpp"          // Include short list of convenience functions for rendering
+#include <Eigen/Core>  
 #include <hiredis/hiredis.h>
 #include <opencv2/opencv.hpp>   // Include OpenCV API
 #include <opencv2/imgcodecs.hpp>
@@ -52,10 +53,11 @@ int main(int argc, char * argv[]) try
             reply = (redisReply*)redisCommand(c, "GET %s", "rsd455::rgb");
             // reply = (redisReply*)redisCommand(c, "GET rsd455::rgb");
 
+            // Convert to Eigen
+            Eigen::Map<Eigen::VectorXd> 
+
             // Convert to vector of byte            
             std::vector<char> vectordata(reply->str, reply->str + bufferSize);
-
-            std::cout << reply->str << std::endl;
 
             // Create mat
             Mat data_mat(vectordata, true);
