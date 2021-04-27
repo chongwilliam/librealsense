@@ -31,10 +31,10 @@ int main(int argc, char * argv[]) try
 
     bool show_rgb = false;
     bool show_depth = false;
-    if (argv[0] == "0") {
+    if (atoi(argv[1]) == 0) {
         show_rgb = true;
     }
-    else if (argv[1] == "1") {
+    else if (atoi(argv[1]) == 1) {
         show_depth = true;
     }
     else {
@@ -43,21 +43,34 @@ int main(int argc, char * argv[]) try
 
     const auto window_name = "Display Image";
     namedWindow(window_name, WINDOW_AUTOSIZE);
-    int bufferSize = 1280 * 720;
+    int bufferSize = 640 * 480 * 3;
 
     while (waitKey(1) < 0 && getWindowProperty(window_name, WND_PROP_AUTOSIZE) >= 0)
     {
         if (show_rgb) {
             // RGB
-            reply = (redisReply*)redisCommand(c,"GET rsd455::rgb");
-            Mat image = imdecode(cv::Mat(1, bufferSize, CV_8UC1, reply->str), IMREAD_UNCHANGED);  // default reads color
+            reply = (redisReply*)redisCommand(c, "GET %s", "rsd455::rgb");
+            // reply = (redisReply*)redisCommand(c, "GET rsd455::rgb");
+
+            // Convert to vector of byte            
+            std::vector<char> vectordata(reply->str, reply->str + bufferSize);
+
+            std::cout << reply->str << std::endl;
+
+            // Create mat
+            Mat data_mat(vectordata, true);
+
+            // Convert to cv mat
+            // Mat image = imdecode(cv::Mat(1, reply->len, CV_8UC1, reply->str), IMREAD_UNCHANGED);  // default reads color
+            Mat image(imdecode(data_mat, 1));
+
             // Update the window with new data
-            imshow(window_name, image);
+            // imshow(window_name, image);
             freeReplyObject(reply);
         }
         else if (show_depth) {
             // Depth
-            reply = (redisReply*)redisCommand(c,"GET rsd455::depth");
+            reply = (redisReply*)redisCommand(c,"GET %s", "rsd455::depth");
             Mat image = imdecode(cv::Mat(1, bufferSize, CV_8UC1, reply->str), IMREAD_UNCHANGED);  // default reads color
             // Update the window with new data
             imshow(window_name, image);

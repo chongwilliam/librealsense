@@ -52,8 +52,8 @@ int main(int argc, char * argv[]) try
     while (app) // Application still alive?
     {
         // rs2::frameset data = pipe.wait_for_frames().    // Wait for next set of frames from the camera
-        //                      apply_filter(printer).     // Print each enabled stream frame rate
-        //                      apply_filter(color_map);   // Find and colorize the depth data
+                             // apply_filter(printer).     // Print each enabled stream frame rate
+                             // apply_filter(color_map);   // Find and colorize the depth data
 
         rs2::frameset data = pipe.wait_for_frames();
 
@@ -62,21 +62,21 @@ int main(int argc, char * argv[]) try
         app.show(data);
 
         // Get frames
-        rs2::frame rgb = data.get_color_frame();
+        rs2::video_frame rgb = data.first(RS2_STREAM_COLOR);
         rs2::frame depth = data.get_depth_frame().apply_filter(color_map);
 
         // Query frame size (width and height)
         const int w = depth.as<rs2::video_frame>().get_width();
-        const int h = depth.as<rs2::video_frame>().get_height();
+        const int h = depth.as<rs2::video_frame>().get_height();  // 640 x 480 default 
 
         // Create OpenCV matrix of size (w,h) from the colorized depth data
         cv::Mat rgb_image(cv::Size(w, h), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
         cv::Mat depth_image(cv::Size(w, h), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
 
         // Stream data to redis server
-        reply = (redisReply*)redisCommand(c,"SET rsd455::rgb",(char*)rgb_image.data, h*w*3);
+        reply = (redisReply*)redisCommand(c,"SET rsd455::rgb %b",(char*)rgb_image.data, h*w*3);
         freeReplyObject(reply);
-        reply = (redisReply*)redisCommand(c,"SET rsd455::depth",(char*)depth_image.data, h*w*3);
+        reply = (redisReply*)redisCommand(c,"SET rsd455::depth %b",(char*)depth_image.data, h*w*3);
         freeReplyObject(reply);
     }
 

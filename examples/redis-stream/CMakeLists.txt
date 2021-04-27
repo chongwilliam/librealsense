@@ -23,5 +23,7 @@ if(BUILD_GRAPHICAL_EXAMPLES)
     include_directories(redis-show ../ ../../third-party/tclap/include)
     set_target_properties (redis-show PROPERTIES FOLDER "Examples")
 	install(TARGETS redis-show RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+    FILE(COPY redis-show.py DESTINATION ${CMAKE_INSTALL_BINDIR})
     
 endif()
