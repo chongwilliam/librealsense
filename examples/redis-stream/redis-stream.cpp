@@ -80,7 +80,8 @@ int main(int argc, char * argv[]) try
         reply = (redisReply*)redisCommand(c,"SET rsd455::rgb %b",(char*)rgb_image.data, h*w*3);
         freeReplyObject(reply);
         reply = (redisReply*)redisCommand(c,"SET rsd455::depth %b",(char*)depth_image.data, h*w*3);
-        freeReplyObject(reply);
+        freeReplyObject(reply);       
+
     }
 
     return EXIT_SUCCESS;

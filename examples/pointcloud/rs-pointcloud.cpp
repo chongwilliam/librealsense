@@ -6,11 +6,45 @@
 
 #include <algorithm>            // std::min, std::max
 
+// #include <hiredis/hiredis.h>    // Include Redis API
+#include "redis/RedisClient.h"
+// Create redis keys 
+// const char *PC_KEY = "pc::capture";
+const std::string PC_KEY = "pc::capture";
+
 // Helper functions
 void register_glfw_callbacks(window& app, glfw_state& app_state);
 
 int main(int argc, char * argv[]) try
 {
+    /*
+    // Connect to redis server given by argument IP 
+    redisContext *c;
+    redisReply *reply;
+    const char *hostname = "127.0.0.1";
+    int port = 6379;
+    struct timeval timeout = { 2, 0 }; // 2 seconds
+    c = redisConnectWithTimeout(hostname, port, timeout);
+    if (c == NULL || c->err) {
+       std::cerr << "Something bad happened" << std::endl;
+       exit(1);
+    }
+    */
+    auto redis_client = RedisClient();
+    redis_client.connect();
+    redis_client.set(PC_KEY, "0");
+    std::string save_command = "0";
+
+    /*
+    // Initialize key     
+    reply = (redisReply*)redisCommand(c, "SET %s %s", PC_KEY, "0");
+    freeReplyObject(reply); 
+    
+    reply = (redisReply*)redisCommand(c, "GET %s", PC_KEY);
+    std::cout << reply->len << std::endl;
+    freeReplyObject(reply); 
+    */
+    
     // Create a simple OpenGL window for rendering:
     window app(1280, 720, "RealSense Pointcloud Example");
     // Construct an object to manage view state
@@ -51,7 +85,26 @@ int main(int argc, char * argv[]) try
         app_state.tex.upload(color);
 
         // Draw the pointcloud
-        draw_pointcloud(app.width(), app.height(), app_state, points);
+        draw_pointcloud(app.width(), app.height(), app_state, points);        
+        
+        // Save the pointcloud to .ply file if redis key is on
+        /*
+        reply = (redisReply*)redisCommand(c,"GET %s", PC_KEY);
+        std::cout << reply->str << std::endl;
+        if (std::stoi(reply->str) == 1) {        	       
+            freeReplyObject(reply);
+	    points.export_to_ply("test.ply", color);
+	    reply = (redisReply*)redisCommand(c,"SET %s %s", PC_KEY, "0");
+	    freeReplyObject(reply);
+        } 
+        */        
+        save_command = redis_client.get(PC_KEY);
+        std::cout << save_command << std::endl;
+        if (save_command == "1") {
+            points.export_to_ply("test.ply", color);
+            redis_client.set(PC_KEY, "0");
+        }
+        
     }
 
     return EXIT_SUCCESS;
